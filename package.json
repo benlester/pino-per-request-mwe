@@ -1,0 +1,36 @@
+{
+  "name": "pino-simple-per-log-example",
+  "version": "1.0.0",
+  "description": "Simple implementation illustrating a per request custom pino logger",
+  "main": "app.ts",
+  "dependencies": {
+    "@koa/cors": "^3.0.0",
+    "dotenv": "^16.3.1",
+    "koa": "^2.13.0",
+    "koa-bodyparser": "^4.3.0",
+    "koa-compress": "^3.1.0",
+    "koa-helmet": "^5.2.0",
+    "koa-router": "^10.1.1",
+    "pino": "^8.14.1",
+    "pino-pretty": "^10.0.1"
+  },
+  "devDependencies": {
+    "@types/koa": "^2.11.4",
+    "@types/koa-bodyparser": "^4.3.0",
+    "@types/koa-compress": "^2.0.9",
+    "@types/koa-helmet": "^3.1.2",
+    "@types/node": "^14.14.20",
+    "@typescript-eslint/eslint-plugin": "^5.23.0",
+    "@typescript-eslint/parser": "^5.23.0",
+    "eslint": "^8.15.0",
+    "eslint-config-prettier": "^8.5.0",
+    "eslint-plugin-eslint-comments": "^3.2.0",
+    "ts-node": "^10.2.1",
+    "typescript": "^4.4.3"
+  },
+  "scripts": {
+    "start": "nodemon",
+    "build": "tsc",
+    "develop": "nodemon --exec 'node --inspect=0.0.0.0:9081 --require ts-node/register ./src/app.ts'"
+  }
+}
