@@ -116,6 +116,7 @@ async function startServer() {
   app.use(router.routes());
 
   app.listen({ port: 7777 }, () => {
+    localLogger.info(`Process ID: ${process.pid}`);
     localLogger.info("HTTP server ready at http://localhost:7777");
   });
 }
