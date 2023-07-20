@@ -40,7 +40,33 @@ interface CustomContext extends Koa.Context {
   logger?: Logger;
 }
 
-router.get("/", ctx => {
+router.get("/", async ctx => {
+  function createDummyTimeout(time, shouldThrowError = false) {
+    return new Promise((resolve, reject) => {
+      setTimeout(() => {
+        if (shouldThrowError) {
+          reject(new Error(`Rejected after ${time} milliseconds`));
+        } else {
+          resolve(`Resolved after ${time} milliseconds`);
+        }
+      }, time);
+    });
+  }
+
+  // Three dummy timeout promises
+  const promise1 = createDummyTimeout(2000);
+  const promise2 = createDummyTimeout(1500);
+  const promise3 = createDummyTimeout(3000, true); // This promise will throw an error after 3 seconds
+
+  await Promise.all([promise1, promise2, promise3]);
+  //.then(results => {
+  //console.log("All promises resolved:");
+  //console.log(results);
+  //})
+  //.catch(error => {
+  //console.error("An error occurred:", error.message);
+  //});
+
   ctx.logger.verbose("GET endpoint hit");
   ctx.body = "Simple pino logger example";
 });
@@ -72,38 +98,49 @@ async function startServer() {
 
   // initialise logger middleware
   app.use(async (ctx, next) => {
-    const logFilename = `${process.env.LOG_BASE_DIR}${new Date().toISOString().split("T")[0]}/${
-      new Date().toISOString().replace(/[:.]/g, "_") // make filename_safe
-    }_TEST_LOG.log`;
+    const logFilename = `${process.env.LOG_BASE_DIR}${new Date().toISOString().split("T")[0]}/TEST_LOG.log`;
 
-    const logger = pino({
-      mixin() {
-        return { appName: "TEST PINO (PER REQUEST)" };
-      },
-      base: undefined,
-      level: "silly",
-      useOnlyCustomLevels: true,
-      customLevels: {
-        error: 60,
-        warn: 40,
-        info: 30,
-        http: 25,
-        verbose: 21,
-        debug: 20,
-        silly: 10
-      },
-      timestamp: pino.stdTimeFunctions.isoTime,
-      transport: {
-        targets: [
-          { target: "pino/file", level: "silly", options: { destination: logFilename, mkdir: true } },
-          { target: "pino-pretty", level: "silly", options: { destination: 1, colorize: true } }
-        ]
-      }
+    const fileTransport = pino.transport({
+      target: "pino/file",
+      options: { destination: ctx.logFilename, mkdir: true }
     });
+
+    const logger = pino(
+      {
+        mixin() {
+          return { appName: "TEST PINO (PER REQUEST)" };
+        },
+        base: undefined,
+        level: "silly",
+        useOnlyCustomLevels: true,
+        customLevels: {
+          error: 60,
+          warn: 40,
+          info: 30,
+          http: 25,
+          verbose: 21,
+          debug: 20,
+          silly: 10
+        },
+        timestamp: pino.stdTimeFunctions.isoTime,
+        transport: {
+          targets: [
+            { target: "pino/file", level: "silly", options: { destination: logFilename, mkdir: true } },
+            { target: "pino-pretty", level: "silly", options: { destination: 1, colorize: true } }
+          ]
+        }
+      },
+      fileTransport
+    );
 
     ctx.logger = logger;
     ctx.logger.silly("Logger initialised");
     await next();
+
+    // clean up at end of request
+    if (fileTransport) {
+      await fileTransport.end();
+    }
   });
 
   app.use(async (ctx, next) => {
